@@ -2,9 +2,8 @@
 
 A lightweight Linux container runtime in C with a long-running supervisor and a kernel-space memory monitor.
 
-Read [`project-guide.md`](project-guide.md) for the full project specification.
-
----
+TEAM INFORMATION
+SRIYA YASHITA CHANDU - PES2UG24CS523
 
 ## Getting Started
 
@@ -99,13 +98,7 @@ make -C boilerplate ci
 This smoke check does not test kernel-module loading, supervisor runtime behavior, or container execution.
 
 ---
+SCREENSHOTS 
+1) MULTI-CONTAINER SUPERVISION
+   <img width="859" height="229" alt="image" src="https://github.com/user-attachments/assets/85101d51-ecca-492e-b136-ca24ff6e0f06" />
 
-## What to Do Next
-
-Read [`project-guide.md`](project-guide.md) end to end. It contains:
-
-- The six implementation tasks (multi-container runtime, CLI, logging, kernel monitor, scheduling experiments, cleanup)
-- The engineering analysis you must write
-- The exact submission requirements, including what your `README.md` must contain (screenshots, analysis, design decisions)
-
-Your fork's `README.md` should be replaced with your own project documentation as described in the submission package section of the project guide. (As in get rid of all the above content and replace with your README.md)
