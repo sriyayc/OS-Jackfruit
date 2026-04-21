@@ -162,14 +162,14 @@ Soft and hard limits are different policies because not all memory growth is an 
 
 Enforcement belongs in kernel space rather than purely in user space for two reasons. First, a user-space monitor can be fooled or delayed: if the supervisor is scheduled out, a container can grow past its limit before the next check. The kernel timer fires regardless of supervisor scheduling. Second, the kernel has direct access to mm_struct and get_mm_rss() without any inter-process communication overhead. A user-space monitor would have to read /proc/<pid>/status on every check, which is slower and introduces TOCTOU races.
 
-4.5 Scheduling Behavior
+5 Scheduling Behavior
 The Linux Completely Fair Scheduler (CFS) assigns CPU time proportional to each task's weight, which is derived from its nice value. A nice value of -5 corresponds to a higher weight than nice +10, so CFS allocates a larger share of CPU time to the lower-nice process when both are runnable simultaneously.
 
 In our experiment, both containers ran an identical CPU-bound workload for 15 seconds. The high-priority container (nice -5) completed in 14.748s while the low-priority container (nice +10) took 16.329s — a difference of 1.581 seconds on a single-core equivalent workload. This is consistent with CFS behavior: the scheduler does not starve the low-priority task but gives it proportionally less time, causing it to make slower progress and finish later.
 
 The result also illustrates that CFS targets fairness and proportional sharing rather than strict priority preemption. Both tasks ran to completion; neither was starved. The high-priority task simply received more CPU quanta per unit of wall-clock time.
 
-5. Design Decisions and Tradeoffs
+c) Design Decisions and Tradeoffs
 Namespace isolation
 Choice: CLONE_NEWPID | CLONE_NEWUTS | CLONE_NEWNS with chroot(). Tradeoff: chroot() is simpler than pivot_root() but is escapable if a process inside has root and uses .. traversal. pivot_root() would be more secure. Justification: For a demonstration runtime, chroot() is sufficient and avoids the complexity of setting up a new root mount. The project spec lists pivot_root as optional.
 
@@ -185,9 +185,21 @@ Choice: Mutex (DEFINE_MUTEX) to protect the monitored list in the kernel module.
 Scheduling experiments
 Choice: Nice values via setpriority() (through the nice() call in the child before exec) to differentiate CPU allocation. Tradeoff: Nice values only affect CFS weight, not CPU affinity or real-time scheduling classes. The effect is statistical and depends on system load; on an idle single-core VM the difference is measurable but modest. Justification: Nice values are the simplest and most portable way to influence CFS scheduling without requiring CAP_SYS_NICE for real-time classes. The 1.5-second difference on a 15-second workload is a clear and reproducible observable effect.
 
+D) Scheduler Experiment Results
+Experiment: CPU-bound containers with different nice values
+Both containers ran /cpu_hog 15 — a pure CPU-bound workload that spins for 15 seconds counting loop iterations.
 
+| Container | Nice value | Real time (wall clock) |
+|-----------|-----------|----------------------|
+| cpu-hi    | -5        | 14.392s              |
+| cpu-lo    | +10       | 14.747s              |
 
+Both containers were launched within 1-2 seconds of each other so they competed for CPU time for the majority of their runtime.
 
+**Observations:**
+- cpu-hi finished 0.355 seconds faster despite running the same workload
+- Neither task was starved — both completed successfully
+- The difference is consistent with CFS proportional sharing based on nice value weights
 
 
 
