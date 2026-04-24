@@ -30,7 +30,26 @@
 
 #define DEVICE_NAME "container_monitor"
 #define CHECK_INTERVAL_SEC 1
+/* ==============================================================
+ * TODO 1: Define your linked-list node struct.
+ *
+ * Requirements:
+ *   - track PID, container ID, soft limit, and hard limit
+ *   - remember whether the soft-limit warning was already emitted
+ *   - include `struct list_head` linkage
+ * ============================================================== */
 
+
+/* ==============================================================
+ * TODO 2: Declare the global monitored list and a lock.
+ *
+ * Requirements:
+ *   - shared across ioctl and timer code paths
+ *   - protect insert, remove, and iteration safely
+ *
+ * You may choose either a mutex or a spinlock, but your README must
+ * justify the choice in terms of the code paths you implemented.
+ * ============================================================== */
 struct monitored_entry {
     pid_t pid;
     char container_id[64];
@@ -121,6 +140,16 @@ static void kill_process(const char *container_id,
 /* ---------------------------------------------------------------
  * Timer Callback - fires every CHECK_INTERVAL_SEC seconds.
  * --------------------------------------------------------------- */
+ /* ==============================================================
+     * TODO 3: Implement periodic monitoring.
+     *
+     * Requirements:
+     *   - iterate through tracked entries safely
+     *   - remove entries for exited processes
+     *   - emit soft-limit warning once per entry
+     *   - enforce hard limit and then remove the entry
+     *   - avoid use-after-free while deleting during iteration
+     * ============================================================== */
 static void timer_callback(struct timer_list *t)
 {
     
@@ -166,6 +195,15 @@ static void timer_callback(struct timer_list *t)
  *   - register a PID with soft + hard limits
  *   - unregister a PID when the runtime no longer needs tracking
  * --------------------------------------------------------------- */
+
+        /* ==============================================================
+         * TODO 4: Add a monitored entry.
+         *
+         * Requirements:
+         *   - allocate and initialize one node from req
+         *   - validate allocation and limits
+         *   - insert into the shared list under the chosen lock
+         * ============================================================== */
 static long monitor_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
 {
     struct monitor_request req;
@@ -229,6 +267,14 @@ static long monitor_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
 
     return -ENOENT;
 }
+/* ==============================================================
+     * TODO 5: Remove a monitored entry on explicit unregister.
+     *
+     * Requirements:
+     *   - search by PID, container ID, or both
+     *   - remove the matching entry safely if found
+     *   - return status indicating whether a matching entry was removed
+     * ============================================================== */
 static struct file_operations fops = {
     .owner = THIS_MODULE,
     .unlocked_ioctl = monitor_ioctl,
