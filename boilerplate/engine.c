@@ -233,7 +233,15 @@ static void bounded_buffer_begin_shutdown(bounded_buffer_t *buf)
     pthread_cond_broadcast(&buf->not_full);
     pthread_mutex_unlock(&buf->mutex);
 }
-
+/*
+ * TODO:
+ * Implement producer-side insertion into the bounded buffer.
+ *
+ * Requirements:
+ *   - block or fail according to your chosen policy when the buffer is full
+ *   - wake consumers correctly
+ *   - stop cleanly if shutdown begins
+ */
 int bounded_buffer_push(bounded_buffer_t *buf, const log_item_t *item)
 {
     pthread_mutex_lock(&buf->mutex);
@@ -250,7 +258,15 @@ int bounded_buffer_push(bounded_buffer_t *buf, const log_item_t *item)
     pthread_mutex_unlock(&buf->mutex);
     return 0;
 }
-
+/*
+ * TODO:
+ * Implement consumer-side removal from the bounded buffer.
+ *
+ * Requirements:
+ *   - wait correctly while the buffer is empty
+ *   - return a useful status when shutdown is in progress
+ *   - avoid races with producers and shutdown
+ */
 int bounded_buffer_pop(bounded_buffer_t *buf, log_item_t *item)
 {
     pthread_mutex_lock(&buf->mutex);
@@ -268,6 +284,14 @@ int bounded_buffer_pop(bounded_buffer_t *buf, log_item_t *item)
     return 0;
 }
 
+/*
+ * TODO:
+ * Implement the logging consumer thread.
+ *
+ * Suggested responsibilities:
+ *   - remove log chunks from the bounded buffer
+ *   - route each chunk to the correct per-container log file
+ *   - exit cleanly when shutdown begins and pending work is drained
 void *logging_thread(void *arg)
 {
     supervisor_ctx_t *ctx = (supervisor_ctx_t *)arg;
@@ -308,6 +332,17 @@ static void *producer_thread(void *arg)
     return NULL;
 }
 
+/*
+ * TODO:
+ * Implement the clone child entrypoint.
+ *
+ * Required outcomes:
+ *   - isolated PID / UTS / mount context
+ *   - chroot or pivot_root into rootfs
+ *   - working /proc inside container
+ *   - stdout / stderr redirected to the supervisor logging path
+ *   - configured command executed inside the container
+ */
 int child_fn(void *arg)
 {
     child_config_t *cfg = (child_config_t *)arg;
